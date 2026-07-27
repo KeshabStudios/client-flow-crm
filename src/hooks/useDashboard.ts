@@ -83,13 +83,13 @@ export function useDashboard() {
         supabase.from("tasks").select("id, title, created_at").order("created_at", { ascending: false }).limit(3),
         supabase.from("customers").select("id, full_name, created_at").order("created_at", { ascending: false }).limit(3),
 
-        // Upcoming tasks
-        supabase
-          .from("tasks")
-          .select("id, title, priority, due_date, category")
-          .neq("status", "completed")
-          .order("due_date", { ascending: true })
-          .limit(5),
+        // Upcoming tasks (category column doesn't exist in tasks table)
+          supabase
+            .from("tasks")
+            .select("id, title, priority, due_date")
+            .neq("status", "completed")
+            .order("due_date", { ascending: true })
+            .limit(5),
 
         // Lead status data
         supabase.from("leads").select("stage"),
@@ -170,12 +170,12 @@ export function useDashboard() {
       if (results[10].status === "fulfilled") {
         const tasks = results[10].value.data ?? [];
         setUpcomingTasks(
-          tasks.map((t: { id: string; title: string; priority: string; due_date: string | null; category: string | null }) => ({
+          tasks.map((t: { id: string; title: string; priority: string; due_date: string | null }) => ({
             id: t.id,
             title: t.title,
             priority: (t.priority as DashboardTask["priority"]) || "medium",
             due: t.due_date ? formatDueDate(t.due_date) : "No due date",
-            category: t.category || "General",
+            category: "General",
           }))
         );
       } else {
