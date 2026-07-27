@@ -19,13 +19,16 @@ export interface Customer {
   created_at: string;
 }
 
+export type LeadStage = "new" | "qualified" | "proposal" | "negotiation" | "won" | "lost";
+export type LeadSource = "phone" | "email" | "website" | "referral" | "social" | "other";
+
 export interface Lead {
   id: string;
   customer_id?: string;
   title: string;
-  stage: "new" | "qualified" | "proposal" | "negotiation" | "closed_won" | "closed_lost";
+  stage: LeadStage;
   value?: number;
-  source?: string;
+  source?: LeadSource;
   expected_close_date?: string;
   created_at: string;
 }
