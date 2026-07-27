@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,11 +16,18 @@ interface RecentActivitiesProps {
 }
 
 export function RecentActivities({ activities, loading }: RecentActivitiesProps) {
+  const navigate = useNavigate();
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-muted-foreground"
+          onClick={() => navigate("/")}
+        >
           View all
         </Button>
       </CardHeader>

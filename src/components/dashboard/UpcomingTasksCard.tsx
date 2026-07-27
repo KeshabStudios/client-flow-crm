@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,6 +30,7 @@ interface UpcomingTasksCardProps {
 }
 
 export function UpcomingTasksCard({ tasks, loading }: UpcomingTasksCardProps) {
+  const navigate = useNavigate();
   const [checkedTasks, setCheckedTasks] = useState<Set<string>>(new Set());
 
   const toggleTask = (id: string) => {
@@ -52,7 +54,7 @@ export function UpcomingTasksCard({ tasks, loading }: UpcomingTasksCardProps) {
             {loading ? "Loading..." : `${checkedTasks.size} of ${tasks.length} completed`}
           </p>
         </div>
-        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => navigate("/tasks")}>
           View all
         </Button>
       </CardHeader>
