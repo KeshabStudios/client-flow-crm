@@ -50,8 +50,19 @@ export interface Profile {
   first_name?: string;
   last_name?: string;
   full_name?: string;
+  name?: string;
   avatar_url?: string;
+  phone?: string;
   updated_at: string;
+}
+
+export interface UserSettings {
+  id: string;
+  user_id: string;
+  theme: "light" | "dark";
+  language: string;
+  email_notifications: boolean;
+  push_notifications: boolean;
 }
 
 export interface Notification {
