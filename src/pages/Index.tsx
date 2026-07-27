@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   Users,
   Target,
@@ -18,6 +19,7 @@ import { MonthlyLeadsChart } from "@/components/dashboard/MonthlyLeadsChart";
 import { useDashboard } from "@/hooks/useDashboard";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const {
     stats,
     welcomeStats,
@@ -63,7 +65,7 @@ export default function Dashboard() {
         <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
           Refresh
         </Button>
-        <Button size="sm">+ New Deal</Button>
+        <Button size="sm" onClick={() => navigate("/leads")}>+ New Deal</Button>
       </PageHeader>
 
       <WelcomeCard stats={welcomeStats} loading={loading} />
