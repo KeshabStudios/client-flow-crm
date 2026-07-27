@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { SeoHead } from "@/components/shared/SeoHead";
+import { ErrorState } from "@/components/shared/ErrorState";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   KanbanBoard,
 } from "@/components/leads/KanbanBoard";
@@ -12,7 +13,7 @@ import { LeadDetail } from "@/components/leads/LeadDetail";
 import { LeadDeleteDialog } from "@/components/leads/LeadDeleteDialog";
 import type { KanbanCardData } from "@/components/leads/KanbanCard";
 import type { LeadStage, Lead } from "@/types";
-import { Loader2, AlertCircle, Table2, Columns3 } from "lucide-react";
+import { Table2, Columns3 } from "lucide-react";
 
 interface CustomerInfo {
   full_name: string;
@@ -37,13 +38,11 @@ export default function Kanban() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Detail/delete modals
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<KanbanCardData | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Fetch all leads (no pagination for board view)
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -83,7 +82,6 @@ export default function Kanban() {
     fetchLeads();
   }, [fetchLeads]);
 
-  // Handle stage change from drag-and-drop
   const handleStageChange = useCallback(
     async (leadId: string, newStage: LeadStage) => {
       const { error: updateError } = await supabase
@@ -100,7 +98,6 @@ export default function Kanban() {
         throw updateError;
       }
 
-      // Optimistic update already applied — just sync
       setLeads((prev) =>
         prev.map((l) => (l.id === leadId ? { ...l, stage: newStage } : l))
       );
@@ -108,17 +105,14 @@ export default function Kanban() {
     []
   );
 
-  // Card click → show detail
   const handleCardClick = useCallback((lead: KanbanCardData) => {
     setSelectedLead(lead);
     setDetailOpen(true);
   }, []);
 
-  // Edit from detail modal
   const handleEditFromDetail = useCallback(
     (lead: KanbanCardData) => {
       setDetailOpen(false);
-      // Navigate to leads page with the edit form prefilled
       navigate("/leads");
       toast({
         title: "Info",
@@ -128,7 +122,6 @@ export default function Kanban() {
     [navigate]
   );
 
-  // Delete from detail modal
   const handleDeleteFromDetail = useCallback(
     (lead: KanbanCardData) => {
       setDetailOpen(false);
@@ -138,7 +131,6 @@ export default function Kanban() {
     []
   );
 
-  // Confirm delete
   const handleDeleteConfirm = useCallback(async () => {
     if (!selectedLead) return;
     setDeleteLoading(true);
@@ -166,6 +158,7 @@ export default function Kanban() {
   if (error && !loading) {
     return (
       <div className="space-y-6">
+        <SeoHead title="Kanban Board" />
         <PageHeader
           title="Kanban Board"
           description="Drag and drop leads to update their stage."
@@ -175,21 +168,15 @@ export default function Kanban() {
             Table View
           </Button>
         </PageHeader>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error loading leads</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button variant="outline" onClick={fetchLeads}>
-          <Loader2 className="mr-2 h-4 w-4" />
-          Retry
-        </Button>
+        <ErrorState message={error} onRetry={fetchLeads} />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <SeoHead title="Kanban Board" description="Drag and drop leads to update their stage." />
+
       <PageHeader
         title="Kanban Board"
         description="Drag and drop leads to update their stage."
@@ -199,7 +186,7 @@ export default function Kanban() {
             <Table2 className="mr-2 h-4 w-4" />
             Table View
           </Button>
-          <Button variant="secondary" disabled className="cursor-default">
+          <Button variant="secondary" disabled className="cursor-default" aria-label="Board view active">
             <Columns3 className="mr-2 h-4 w-4" />
             Board
           </Button>
@@ -213,34 +200,25 @@ export default function Kanban() {
         onCardClick={handleCardClick}
       />
 
-      {/* Detail Modal */}
       <LeadDetail
-        lead={
-          selectedLead
-            ? {
-                id: selectedLead.id,
-                title: selectedLead.title,
-                stage: selectedLead.stage,
-                value: selectedLead.value ?? undefined,
-                expected_close_date: selectedLead.expected_close_date ?? undefined,
-                customer_id: null,
-                customers: selectedLead.customer
-                  ? {
-                      full_name: selectedLead.customer.full_name,
-                      company_name: selectedLead.customer.company_name ?? undefined,
-                    }
-                  : null,
-                created_at: "",
-              }
-            : null
-        }
+        lead={selectedLead ? {
+          id: selectedLead.id,
+          title: selectedLead.title,
+          stage: selectedLead.stage,
+          value: selectedLead.value ?? undefined,
+          expected_close_date: selectedLead.expected_close_date ?? undefined,
+          customer_id: null,
+          customers: selectedLead.customer
+            ? { full_name: selectedLead.customer.full_name, company_name: selectedLead.customer.company_name ?? undefined }
+            : null,
+          created_at: "",
+        } : null}
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onEdit={handleEditFromDetail}
         onDelete={handleDeleteFromDetail}
       />
 
-      {/* Delete Dialog */}
       <LeadDeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

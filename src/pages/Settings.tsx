@@ -3,10 +3,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useSettings } from "@/hooks/useSettings";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { SeoHead } from "@/components/shared/SeoHead";
+import { ErrorState } from "@/components/shared/ErrorState";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -21,7 +24,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
 import {
   Sun,
@@ -35,7 +37,6 @@ import {
   Eye,
   EyeOff,
   Check,
-  X,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
@@ -50,12 +51,33 @@ const LANGUAGES = [
   { code: "zh", label: "中文" },
 ];
 
+function SettingsSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i}>
+          <CardHeader>
+            <Skeleton className="h-5 w-36" />
+            <Skeleton className="h-3 w-56" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-12 w-full" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default function Settings() {
   const { user } = useAuth();
   const { theme, toggleTheme, setTheme } = useTheme();
   const { settings, loading, error, fetchSettings, updateSettings } = useSettings();
 
-  // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -64,45 +86,31 @@ export default function Settings() {
   const [changingPw, setChangingPw] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
 
-  // Settings state
   const [language, setLanguage] = useState("en");
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
 
-  // Load settings on mount
   useEffect(() => {
-    if (user) {
-      fetchSettings(user.id);
-    }
+    if (user) fetchSettings(user.id);
   }, [user, fetchSettings]);
 
-  // Populate local state when settings load
   useEffect(() => {
     if (settings) {
       setLanguage(settings.language || "en");
       setEmailNotifs(settings.email_notifications ?? true);
       setPushNotifs(settings.push_notifications ?? true);
-
-      // Sync theme from DB if it differs (user's last saved preference)
       if (settings.theme === "dark" || settings.theme === "light") {
         setTheme(settings.theme);
       }
     }
   }, [settings, setTheme]);
 
-  // --- Settings save ---
-
   const handleSaveSettings = async () => {
     if (!user) return;
     setSavingSettings(true);
     try {
-      await updateSettings(user.id, {
-        theme,
-        language,
-        email_notifications: emailNotifs,
-        push_notifications: pushNotifs,
-      });
+      await updateSettings(user.id, { theme, language, email_notifications: emailNotifs, push_notifications: pushNotifs });
       toast({ title: "Success", description: "Preferences saved." });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to save preferences";
@@ -112,76 +120,44 @@ export default function Settings() {
     }
   };
 
-  // --- Password change ---
-
   const handleChangePassword = async () => {
     setPwError(null);
-
-    if (!currentPassword) {
-      setPwError("Current password is required.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setPwError("New password must be at least 6 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPwError("Passwords do not match.");
-      return;
-    }
+    if (!currentPassword) { setPwError("Current password is required."); return; }
+    if (newPassword.length < 6) { setPwError("New password must be at least 6 characters."); return; }
+    if (newPassword !== confirmPassword) { setPwError("Passwords do not match."); return; }
 
     setChangingPw(true);
     try {
-      // First re-authenticate with current password
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user?.email || "",
         password: currentPassword,
       });
-
       if (signInError) {
-        if (signInError.message.includes("Invalid login credentials")) {
-          setPwError("Current password is incorrect.");
-        } else {
-          setPwError(signInError.message);
-        }
+        setPwError(signInError.message.includes("Invalid login credentials") ? "Current password is incorrect." : signInError.message);
         return;
       }
-
-      // Then update password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (updateError) {
-        setPwError(updateError.message);
-        return;
-      }
-
-      toast({ title: "Success", description: "Password updated successfully." });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) { setPwError(updateError.message); return; }
+      toast({ title: "Success", description: "Password updated." });
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to change password";
-      setPwError(msg);
+      setPwError(err instanceof Error ? err.message : "Failed to change password");
     } finally {
       setChangingPw(false);
     }
   };
 
+  if (loading && !settings) {
+    return <><SeoHead title="Settings" /><SettingsSkeleton /></>;
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Settings"
-        description="Manage your preferences and account security."
-      />
+      <SeoHead title="Settings" description="Manage your preferences and account security." />
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <PageHeader title="Settings" description="Manage your preferences and account security." />
+
+      {error && <ErrorState message={error} />}
 
       <div className="grid gap-6">
         {/* Appearance */}
@@ -189,38 +165,33 @@ export default function Settings() {
           <CardHeader>
             <div className="flex items-center gap-2">
               {theme === "dark" ? (
-                <Moon className="h-5 w-5 text-muted-foreground" />
+                <Moon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               ) : (
-                <Sun className="h-5 w-5 text-muted-foreground" />
+                <Sun className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               )}
               <div>
                 <CardTitle>Appearance</CardTitle>
-                <CardDescription>
-                  Choose between light and dark mode.
-                </CardDescription>
+                <CardDescription>Choose between light and dark mode.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
-                <Label htmlFor="dark-mode" className="text-sm font-medium">
-                  Dark Mode
-                </Label>
+                <Label htmlFor="dark-mode" className="text-sm font-medium">Dark Mode</Label>
                 <p className="text-xs text-muted-foreground">
-                  {theme === "dark"
-                    ? "Dark theme is active"
-                    : "Light theme is active"}
+                  {theme === "dark" ? "Dark theme is active" : "Light theme is active"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Sun className={`h-4 w-4 ${theme === "light" ? "text-primary" : "text-muted-foreground"}`} />
+                <Sun className={`h-4 w-4 ${theme === "light" ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
                 <Switch
                   id="dark-mode"
                   checked={theme === "dark"}
                   onCheckedChange={toggleTheme}
+                  aria-label="Toggle dark mode"
                 />
-                <Moon className={`h-4 w-4 ${theme === "dark" ? "text-primary" : "text-muted-foreground"}`} />
+                <Moon className={`h-4 w-4 ${theme === "dark" ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
               </div>
             </div>
           </CardContent>
@@ -230,25 +201,21 @@ export default function Settings() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-muted-foreground" />
+              <Globe className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               <div>
                 <CardTitle>Language</CardTitle>
-                <CardDescription>
-                  Select your preferred language.
-                </CardDescription>
+                <CardDescription>Select your preferred language.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="w-full sm:w-[250px]">
+              <SelectTrigger className="w-full sm:w-[250px]" aria-label="Select language">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
                 {LANGUAGES.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.label}
-                  </SelectItem>
+                  <SelectItem key={lang.code} value={lang.code}>{lang.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -259,66 +226,42 @@ export default function Settings() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-muted-foreground" />
+              <Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               <div>
                 <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>
-                  Control which notifications you receive.
-                </CardDescription>
+                <CardDescription>Control which notifications you receive.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="flex items-start gap-3">
-                <Bell className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <Bell className="h-5 w-5 text-muted-foreground mt-0.5" aria-hidden="true" />
                 <div>
-                  <Label htmlFor="email-notifs" className="text-sm font-medium">
-                    Email Notifications
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Receive updates via email.
-                  </p>
+                  <Label htmlFor="email-notifs" className="text-sm font-medium">Email Notifications</Label>
+                  <p className="text-xs text-muted-foreground">Receive updates via email.</p>
                 </div>
               </div>
-              <Switch
-                id="email-notifs"
-                checked={emailNotifs}
-                onCheckedChange={setEmailNotifs}
-              />
+              <Switch id="email-notifs" checked={emailNotifs} onCheckedChange={setEmailNotifs} aria-label="Toggle email notifications" />
             </div>
 
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="flex items-start gap-3">
-                <BellRing className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <BellRing className="h-5 w-5 text-muted-foreground mt-0.5" aria-hidden="true" />
                 <div>
-                  <Label htmlFor="push-notifs" className="text-sm font-medium">
-                    Push Notifications
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Receive in-app notifications.
-                  </p>
+                  <Label htmlFor="push-notifs" className="text-sm font-medium">Push Notifications</Label>
+                  <p className="text-xs text-muted-foreground">Receive in-app notifications.</p>
                 </div>
               </div>
-              <Switch
-                id="push-notifs"
-                checked={pushNotifs}
-                onCheckedChange={setPushNotifs}
-              />
+              <Switch id="push-notifs" checked={pushNotifs} onCheckedChange={setPushNotifs} aria-label="Toggle push notifications" />
             </div>
 
             <div className="flex justify-end pt-2">
               <Button onClick={handleSaveSettings} disabled={savingSettings || loading}>
                 {savingSettings ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</>
                 ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Save Preferences
-                  </>
+                  <><Check className="mr-2 h-4 w-4" />Save Preferences</>
                 )}
               </Button>
             </div>
@@ -329,12 +272,10 @@ export default function Settings() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-muted-foreground" />
+              <Shield className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               <div>
                 <CardTitle>Change Password</CardTitle>
-                <CardDescription>
-                  Update your account password. You'll need your current password.
-                </CardDescription>
+                <CardDescription>Update your account password.</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -356,18 +297,16 @@ export default function Settings() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   className="pr-9"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowCurrentPw(!showCurrentPw)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   tabIndex={-1}
+                  aria-label={showCurrentPw ? "Hide password" : "Show password"}
                 >
-                  {showCurrentPw ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -383,18 +322,16 @@ export default function Settings() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="pr-9"
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPw(!showNewPw)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     tabIndex={-1}
+                    aria-label={showNewPw ? "Hide password" : "Show password"}
                   >
-                    {showNewPw ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -406,25 +343,17 @@ export default function Settings() {
                   placeholder="Re-enter new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
                 />
               </div>
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button
-                onClick={handleChangePassword}
-                disabled={changingPw}
-              >
+              <Button onClick={handleChangePassword} disabled={changingPw}>
                 {changingPw ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Updating...</>
                 ) : (
-                  <>
-                    <Shield className="mr-2 h-4 w-4" />
-                    Change Password
-                  </>
+                  <><Shield className="mr-2 h-4 w-4" />Change Password</>
                 )}
               </Button>
             </div>

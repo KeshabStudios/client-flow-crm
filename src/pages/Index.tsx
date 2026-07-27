@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatsCard } from "@/components/shared/StatsCard";
+import { SeoHead } from "@/components/shared/SeoHead";
 import { Button } from "@/components/ui/button";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { RecentActivities } from "@/components/dashboard/RecentActivities";
@@ -17,7 +18,8 @@ import { dashboardStats } from "@/data/dashboard";
 export default function Dashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Header */}
+      <SeoHead title="Dashboard" description="Track your business performance at a glance." />
+
       <PageHeader
         title="Dashboard"
         description="Track your business performance at a glance."
@@ -28,10 +30,8 @@ export default function Dashboard() {
         <Button size="sm">+ New Deal</Button>
       </PageHeader>
 
-      {/* Welcome Card */}
       <WelcomeCard />
 
-      {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Customers"
@@ -63,13 +63,11 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Activity & Tasks */}
       <div className="grid gap-6 lg:grid-cols-2">
         <RecentActivities />
         <UpcomingTasksCard />
       </div>
 
-      {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2">
           <LeadStatusChart />

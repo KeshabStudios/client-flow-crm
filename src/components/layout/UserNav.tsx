@@ -45,6 +45,7 @@ export function UserNav() {
         <Button
           variant="ghost"
           className="relative h-9 gap-2 rounded-full px-2 data-[state=open]:bg-accent"
+          aria-label="User menu"
         >
           <Avatar className="h-7 w-7">
             <AvatarImage
@@ -61,7 +62,7 @@ export function UserNav() {
               {userEmail}
             </span>
           </div>
-          <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground md:block" />
+          <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground md:block" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -75,13 +76,9 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate("/settings")}>
+          <DropdownMenuItem onClick={() => navigate("/profile")}>
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Sparkles className="mr-2 h-4 w-4" />
-            <span>Upgrade Plan</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate("/settings")}>
             <Settings className="mr-2 h-4 w-4" />

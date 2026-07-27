@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { Plus, List, Columns2, CalendarDays, Loader2, AlertCircle } from "lucide-react";
+import { Plus, List, Columns2, CalendarDays } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { SeoHead } from "@/components/shared/SeoHead";
+import { ErrorState } from "@/components/shared/ErrorState";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { TaskBoardView } from "@/components/tasks/TaskBoardView";
 import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
@@ -227,19 +228,13 @@ export default function Tasks() {
   if (error && tasks.length === 0 && view === "list") {
     return (
       <div className="space-y-6">
+        <SeoHead title="Tasks" />
         <PageHeader title="Tasks" description="Manage your tasks.">
           <Button onClick={openCreateForm}>
             <Plus className="mr-2 h-4 w-4" /> New Task
           </Button>
         </PageHeader>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error loading tasks</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button variant="outline" onClick={() => refreshCurrentView()}>
-          <Loader2 className="mr-2 h-4 w-4" /> Retry
-        </Button>
+        <ErrorState message={error} onRetry={refreshCurrentView} />
       </div>
     );
   }
@@ -248,6 +243,7 @@ export default function Tasks() {
 
   return (
     <div className="space-y-6">
+      <SeoHead title="Tasks" description="Manage your tasks and track progress." />
       <PageHeader title="Tasks" description="Manage your tasks.">
         <div className="flex items-center gap-2">
           {/* View Toggle */}
@@ -281,11 +277,7 @@ export default function Tasks() {
 
       {/* Error banner */}
       {error && tasks.length > 0 && (
-        <Alert variant="destructive" className="py-3">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle className="text-sm">Error</AlertTitle>
-          <AlertDescription className="text-sm">{error}</AlertDescription>
-        </Alert>
+        <ErrorState message={error} onRetry={refreshCurrentView} />
       )}
 
       {/* Views */}

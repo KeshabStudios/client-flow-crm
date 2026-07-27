@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { LogIn } from "lucide-react";
+import { SeoHead } from "@/components/shared/SeoHead";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -55,20 +56,27 @@ export default function Login() {
 
   if (loading) {
     return (
-      <AuthLayout title="Welcome back" subtitle="Loading...">
-        <div className="flex justify-center py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
-      </AuthLayout>
+      <>
+        <SeoHead title="Sign In" />
+        <AuthLayout title="Welcome back" subtitle="Loading...">
+          <div className="flex justify-center py-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        </AuthLayout>
+      </>
     );
   }
 
   return (
-    <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to your account to continue"
-    >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <>
+      <SeoHead title="Sign In" description="Sign in to your ClientFlow CRM account." />
+      <AuthLayout
+        title="Welcome back"
+        subtitle="Sign in to your account to continue"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
@@ -135,5 +143,6 @@ export default function Login() {
         </Link>
       </p>
     </AuthLayout>
+    </>
   );
 }

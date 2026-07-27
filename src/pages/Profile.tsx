@@ -2,6 +2,9 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { SeoHead } from "@/components/shared/SeoHead";
+import { ErrorState } from "@/components/shared/ErrorState";
+import { FormSkeleton } from "@/components/shared/PageSkeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -22,9 +25,7 @@ import {
   Phone,
   Camera,
   Save,
-  AlertCircle,
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -38,14 +39,10 @@ export default function Profile() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Load profile on mount
   useEffect(() => {
-    if (user) {
-      fetchProfile(user.id);
-    }
+    if (user) fetchProfile(user.id);
   }, [user, fetchProfile]);
 
-  // Populate form when profile data loads
   useEffect(() => {
     if (profile) {
       setFirstName(profile.first_name || "");
@@ -72,23 +69,12 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "File too large. Max 2MB.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "File too large. Max 2MB.", variant: "destructive" });
       return;
     }
-
-    // Validate file type
     if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Error",
-        description: "Please select an image file.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please select an image file.", variant: "destructive" });
       return;
     }
 
@@ -96,7 +82,6 @@ export default function Profile() {
     try {
       await uploadAvatar(user.id, file);
       toast({ title: "Success", description: "Avatar updated." });
-      // Refresh profile
       await fetchProfile(user.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to upload avatar";
@@ -107,29 +92,36 @@ export default function Profile() {
     }
   };
 
-  const getInitials = (): string => {
+  const getInitials = () => {
     if (firstName || lastName) {
       return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
     }
     return user?.email?.charAt(0).toUpperCase() || "?";
   };
 
+  // Loading state
+  if (loading && !profile) {
+    return (
+      <>
+        <SeoHead title="Profile" />
+        <FormSkeleton fields={3} />
+      </>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      <SeoHead title="Profile" description="Manage your personal information and avatar." />
+
       <PageHeader
         title="Profile"
         description="Manage your personal information and avatar."
       />
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      {error && <ErrorState message={error} />}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Avatar card */}
+        {/* Avatar */}
         <Card>
           <CardHeader>
             <CardTitle>Avatar</CardTitle>
@@ -138,17 +130,14 @@ export default function Profile() {
           <CardContent className="flex flex-col items-center gap-4">
             <div className="relative">
               <Avatar className="h-28 w-28">
-                <AvatarImage
-                  src={profile?.avatar_url || undefined}
-                  alt="Avatar"
-                />
+                <AvatarImage src={profile?.avatar_url || undefined} alt="Avatar" />
                 <AvatarFallback className="text-2xl bg-primary/10 text-primary">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
               {avatarUploading && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden="true" />
                 </div>
               )}
             </div>
@@ -158,12 +147,14 @@ export default function Profile() {
               accept="image/*"
               className="hidden"
               onChange={handleAvatarChange}
+              aria-label="Upload avatar image"
             />
             <Button
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
               disabled={avatarUploading}
+              aria-label="Change profile photo"
             >
               <Camera className="mr-2 h-4 w-4" />
               {avatarUploading ? "Uploading..." : "Change Photo"}
@@ -174,25 +165,24 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Profile details */}
+        {/* Info */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Personal Information</CardTitle>
-            <CardDescription>
-              Update your name, email, and contact details.
-            </CardDescription>
+            <CardDescription>Update your name, email, and contact details.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Email (read-only from auth) */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <Input
                   id="email"
                   value={user?.email || ""}
                   readOnly
                   className="pl-9 bg-muted/50 cursor-not-allowed"
+                  tabIndex={-1}
+                  aria-label="Email address (read-only)"
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">
@@ -206,26 +196,28 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label htmlFor="firstName">First name</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                   <Input
                     id="firstName"
                     placeholder="First name"
                     className="pl-9"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
+                    aria-label="First name"
                   />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last name</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                   <Input
                     id="lastName"
                     placeholder="Last name"
                     className="pl-9"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
+                    aria-label="Last name"
                   />
                 </div>
               </div>
@@ -234,7 +226,7 @@ export default function Profile() {
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <Input
                   id="phone"
                   type="tel"
@@ -242,6 +234,7 @@ export default function Profile() {
                   className="pl-9"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  aria-label="Phone number"
                 />
               </div>
             </div>

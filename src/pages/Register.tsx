@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { SeoHead } from "@/components/shared/SeoHead";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -71,20 +72,27 @@ export default function Register() {
 
   if (loading) {
     return (
-      <AuthLayout title="Create an account" subtitle="Loading...">
-        <div className="flex justify-center py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
-      </AuthLayout>
+      <>
+        <SeoHead title="Create Account" />
+        <AuthLayout title="Create an account" subtitle="Loading...">
+          <div className="flex justify-center py-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          </div>
+        </AuthLayout>
+      </>
     );
   }
 
   return (
-    <AuthLayout
-      title="Create an account"
-      subtitle="Get started with ClientFlow CRM"
-    >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <>
+      <SeoHead title="Create Account" description="Create a new ClientFlow CRM account." />
+      <AuthLayout
+        title="Create an account"
+        subtitle="Get started with ClientFlow CRM"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
@@ -174,5 +182,6 @@ export default function Register() {
         </Link>
       </p>
     </AuthLayout>
+    </>
   );
 }

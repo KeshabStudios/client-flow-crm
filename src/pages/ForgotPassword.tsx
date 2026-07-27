@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { KeyRound, ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { SeoHead } from "@/components/shared/SeoHead";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,9 @@ export default function ForgotPassword() {
 
   if (isSuccess) {
     return (
-      <AuthLayout title="Check your email" subtitle="We've sent you a password reset link.">
+      <>
+        <SeoHead title="Check Your Email" description="Password reset link sent." />
+        <AuthLayout title="Check your email" subtitle="We've sent you a password reset link.">
         <div className="flex flex-col items-center gap-4 py-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Mail className="h-8 w-8 text-primary" />
@@ -66,13 +69,16 @@ export default function ForgotPassword() {
           </Button>
         </div>
       </AuthLayout>
+      </>
     );
   }
 
   return (
-    <AuthLayout
-      title="Forgot password?"
-      subtitle="Enter your email and we'll send you a reset link."
+    <>
+      <SeoHead title="Forgot Password" description="Reset your ClientFlow CRM password." />
+      <AuthLayout
+        title="Forgot password?"
+        subtitle="Enter your email and we'll send you a reset link."
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {error && (
@@ -119,5 +125,6 @@ export default function ForgotPassword() {
         </Link>
       </p>
     </AuthLayout>
+    </>
   );
 }
