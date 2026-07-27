@@ -35,7 +35,7 @@ const navItems = [
 ];
 
 export function AppSidebar() {
-  const { state, toggleSidebar } = useSidebar();
+  const { state, toggleSidebar, setOpenMobile, isMobile } = useSidebar();
   const collapsed = state === "collapsed";
 
   return (
@@ -65,6 +65,9 @@ export function AppSidebar() {
               <SidebarMenuButton asChild tooltip={item.title}>
                 <NavLink
                   to={item.href}
+                  onClick={() => {
+                    if (isMobile) setOpenMobile(false);
+                  }}
                   className={({ isActive }) =>
                     cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
