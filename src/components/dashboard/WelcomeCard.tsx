@@ -1,8 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { welcomeStats } from "@/data/dashboard";
+import { Loader2 } from "lucide-react";
 
-export function WelcomeCard() {
+interface WelcomeStat {
+  label: string;
+  value: number;
+}
+
+interface WelcomeCardProps {
+  stats: WelcomeStat[];
+  loading?: boolean;
+}
+
+export function WelcomeCard({ stats, loading }: WelcomeCardProps) {
   const { user } = useAuth();
   const name = user?.user_metadata?.name || user?.email?.split("@")[0] || "there";
 
@@ -20,12 +30,19 @@ export function WelcomeCard() {
           </div>
 
           <div className="flex flex-wrap gap-6 sm:gap-8">
-            {welcomeStats.map((stat) => (
-              <div key={stat.label} className="text-center sm:text-left">
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-xs text-blue-100">{stat.label}</p>
+            {loading ? (
+              <div className="flex items-center gap-2 text-blue-100">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                <span className="text-xs">Loading...</span>
               </div>
-            ))}
+            ) : (
+              stats.map((stat) => (
+                <div key={stat.label} className="text-center sm:text-left">
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-xs text-blue-100">{stat.label}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </CardContent>
