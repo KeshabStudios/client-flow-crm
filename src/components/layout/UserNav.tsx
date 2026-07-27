@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LogOut,
@@ -23,11 +23,44 @@ import {
 } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export function UserNav() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchAvatar = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data?.avatar_url) setProfileAvatar(data.avatar_url);
+    };
+    fetchAvatar();
+  }, [user]);
+
+  // Refresh avatar when window regains focus (e.g. after profile edit)
+  useEffect(() => {
+    if (!user) return;
+    const onFocus = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data?.avatar_url) setProfileAvatar(data.avatar_url);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [user]);
+
+  const avatarSrc = profileAvatar || user?.user_metadata?.avatar_url || "";
 
   const userName =
     user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
@@ -49,7 +82,7 @@ export function UserNav() {
         >
           <Avatar className="h-7 w-7">
             <AvatarImage
-              src={user?.user_metadata?.avatar_url || ""}
+              src={avatarSrc}
               alt={userName}
             />
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
