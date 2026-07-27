@@ -13,6 +13,7 @@ import Logout from "@/pages/Logout";
 import Dashboard from "@/pages/Index";
 import Customers from "@/pages/Customers";
 import Deals from "@/pages/Deals";
+import Kanban from "@/pages/Kanban";
 import Tasks from "@/pages/Tasks";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/leads" element={<Deals />} />
+                <Route path="/kanban" element={<Kanban />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>

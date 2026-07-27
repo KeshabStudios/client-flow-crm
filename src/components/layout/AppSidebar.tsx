@@ -7,6 +7,7 @@ import {
   Settings,
   ChevronLeft,
   Building2,
+  Columns3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const navItems = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard },
   { title: "Customers", href: "/customers", icon: Users },
   { title: "Leads", href: "/leads", icon: TrendingUp },
+  { title: "Board", href: "/kanban", icon: Columns3 },
   { title: "Tasks", href: "/tasks", icon: CheckSquare },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
