@@ -7,51 +7,46 @@ export interface User {
   created_at: string;
 }
 
-export interface Contact {
+export interface Customer {
   id: string;
-  name: string;
-  email: string;
+  user_id: string;
+  full_name: string;
+  company_name?: string;
+  email?: string;
   phone?: string;
-  company?: string;
-  position?: string;
-  avatar_url?: string;
   status: "active" | "inactive" | "lead";
-  tags: string[];
   notes?: string;
-  created_by: string;
   created_at: string;
-  updated_at: string;
 }
 
-export interface Deal {
+export interface Lead {
   id: string;
+  customer_id?: string;
   title: string;
-  value: number;
-  stage: "lead" | "qualified" | "proposal" | "negotiation" | "closed_won" | "closed_lost";
-  priority: "low" | "medium" | "high";
-  contact_id?: string;
-  company?: string;
-  notes?: string;
+  stage: "new" | "qualified" | "proposal" | "negotiation" | "closed_won" | "closed_lost";
+  value?: number;
+  source?: string;
   expected_close_date?: string;
-  created_by: string;
   created_at: string;
-  updated_at: string;
 }
 
 export interface Task {
   id: string;
+  lead_id?: string;
+  assigned_to?: string;
   title: string;
   description?: string;
-  status: "todo" | "in_progress" | "completed";
   priority: "low" | "medium" | "high";
+  status: "todo" | "in_progress" | "completed";
   due_date?: string;
-  assignee_id?: string;
-  related_to?: {
-    type: "contact" | "deal";
-    id: string;
-  };
-  created_by: string;
   created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  name?: string;
+  avatar_url?: string;
+  role: string;
   updated_at: string;
 }
 
