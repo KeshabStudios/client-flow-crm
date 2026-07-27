@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -83,6 +83,8 @@ export default function Settings() {
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialized = useRef(false);
 
   useEffect(() => {
     if (user) fetchSettings(user.id);
@@ -90,27 +92,44 @@ export default function Settings() {
 
   useEffect(() => {
     if (settings) {
-      if (settings.language) setLanguage(settings.language as any);
       setEmailNotifs(settings.email_notifications ?? true);
       setPushNotifs(settings.push_notifications ?? true);
-      if (settings.theme === "dark" || settings.theme === "light") {
-        setTheme(settings.theme);
-      }
+      // Mark initialized after first settings load so auto-save doesn't fire on mount
+      setTimeout(() => { initialized.current = true; }, 0);
     }
-  }, [settings, setTheme, setLanguage]);
+  }, [settings]);
 
-  const handleSaveSettings = async () => {
+  const saveToDb = useCallback(async (showToast: boolean) => {
     if (!user) return;
     setSavingSettings(true);
     try {
       await updateSettings(user.id, { theme, language, email_notifications: emailNotifs, push_notifications: pushNotifs });
-      toast({ title: "Success", description: "Preferences saved." });
+      if (showToast) toast({ title: "Success", description: "Preferences saved." });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to save preferences";
-      toast({ title: "Error", description: msg, variant: "destructive" });
+      if (showToast) {
+        const msg = err instanceof Error ? err.message : "Failed to save preferences";
+        toast({ title: "Error", description: msg, variant: "destructive" });
+      }
     } finally {
       setSavingSettings(false);
     }
+  }, [user, theme, language, emailNotifs, pushNotifs, updateSettings]);
+
+  // Auto-save when language, theme, emailNotifs, or pushNotifs changes
+  useEffect(() => {
+    if (!user || !initialized.current) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      saveToDb(false);
+    }, 1000);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, [language, theme, emailNotifs, pushNotifs, user, saveToDb]);
+
+  const handleSaveSettings = async () => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    await saveToDb(true);
   };
 
   const handleChangePassword = async () => {
