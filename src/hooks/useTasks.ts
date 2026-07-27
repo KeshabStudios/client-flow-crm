@@ -152,9 +152,15 @@ export function useTasks() {
       assigned_to?: string | null;
       lead_id?: string | null;
     }): Promise<Task> => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       const { data: newTask, error } = await supabase
         .from("tasks")
         .insert({
+          user_id: user.id,
           title: data.title,
           description: data.description || null,
           priority: data.priority,

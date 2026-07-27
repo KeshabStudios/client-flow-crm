@@ -35,6 +35,7 @@ export interface Lead {
 
 export interface Task {
   id: string;
+  user_id: string;
   lead_id?: string;
   assigned_to?: string;
   title: string;
