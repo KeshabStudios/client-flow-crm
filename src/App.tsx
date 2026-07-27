@@ -11,7 +11,7 @@ import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import Logout from "@/pages/Logout";
 import Dashboard from "@/pages/Index";
-import Contacts from "@/pages/Contacts";
+import Customers from "@/pages/Customers";
 import Deals from "@/pages/Deals";
 import Tasks from "@/pages/Tasks";
 import Settings from "@/pages/Settings";
@@ -37,7 +37,7 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
-                <Route path="/contacts" element={<Contacts />} />
+                <Route path="/customers" element={<Customers />} />
                 <Route path="/deals" element={<Deals />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/settings" element={<Settings />} />
