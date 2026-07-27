@@ -1,74 +1,380 @@
-import { Plus, CheckSquare } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "@/components/ui/use-toast";
+import { Plus, List, Columns2, CalendarDays, Loader2, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TaskListView } from "@/components/tasks/TaskListView";
+import { TaskBoardView } from "@/components/tasks/TaskBoardView";
+import { TaskCalendarView } from "@/components/tasks/TaskCalendarView";
+import { TaskForm, TaskFormValues } from "@/components/tasks/TaskForm";
+import { TaskDetail } from "@/components/tasks/TaskDetail";
+import { TaskDeleteDialog } from "@/components/tasks/TaskDeleteDialog";
+import { useTasks, TaskRow } from "@/hooks/useTasks";
+import type { Task } from "@/types";
 
-const sampleTasks = [
-  { id: "1", title: "Follow up with Acme Corp", priority: "high" as const, status: "In Progress", due: "Today" },
-  { id: "2", title: "Review Q3 pipeline report", priority: "high" as const, status: "Todo", due: "Tomorrow" },
-  { id: "3", title: "Update contact email list", priority: "medium" as const, status: "Todo", due: "In 2 days" },
-  { id: "4", title: "Prepare client presentation", priority: "medium" as const, status: "In Progress", due: "In 3 days" },
-  { id: "5", title: "Team standup notes", priority: "low" as const, status: "Completed", due: "Yesterday" },
-];
+type ViewMode = "list" | "board" | "calendar";
 
 export default function Tasks() {
+  const {
+    tasks,
+    pagination,
+    loading,
+    error,
+    profiles,
+    fetchTasks,
+    fetchAllTasks,
+    fetchProfiles,
+    createTask,
+    updateTask,
+    deleteTask,
+  } = useTasks();
+
+  // View mode
+  const [view, setView] = useState<ViewMode>("list");
+
+  // List view state
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [listPage, setListPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Modal state
+  const [formOpen, setFormOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [selectedTask, setSelectedTask] = useState<TaskRow | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Initial load: profiles for assignee dropdown
+  useEffect(() => {
+    fetchProfiles();
+  }, [fetchProfiles]);
+
+  // Debounce search for list view
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setListPage(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Fetch data based on view mode
+  useEffect(() => {
+    if (view === "list") {
+      fetchTasks({
+        search: debouncedSearch,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        priority: priorityFilter !== "all" ? priorityFilter : undefined,
+        sortBy,
+        sortOrder,
+        page: listPage,
+        pageSize,
+      });
+    } else {
+      fetchAllTasks();
+    }
+  }, [
+    view,
+    debouncedSearch,
+    statusFilter,
+    priorityFilter,
+    sortBy,
+    sortOrder,
+    listPage,
+    pageSize,
+    fetchTasks,
+    fetchAllTasks,
+  ]);
+
+  // --- CRUD handlers ---
+
+  const mapFormValues = (
+    values: TaskFormValues
+  ): Parameters<typeof createTask>[0] => ({
+    title: values.title,
+    description: values.description || null,
+    status: values.status,
+    priority: values.priority,
+    due_date: values.due_date || null,
+    assigned_to: values.assigned_to === "none" ? null : (values.assigned_to || null),
+    lead_id: null, // Lead linking not exposed in this form version
+  });
+
+  const refreshCurrentView = useCallback(() => {
+    if (view === "list") {
+      fetchTasks({
+        search: debouncedSearch,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        priority: priorityFilter !== "all" ? priorityFilter : undefined,
+        sortBy,
+        sortOrder,
+        page: listPage,
+        pageSize,
+      });
+    } else {
+      fetchAllTasks();
+    }
+  }, [
+    view,
+    debouncedSearch,
+    statusFilter,
+    priorityFilter,
+    sortBy,
+    sortOrder,
+    listPage,
+    pageSize,
+    fetchTasks,
+    fetchAllTasks,
+  ]);
+
+  const handleCreate = async (values: TaskFormValues) => {
+    try {
+      await createTask(mapFormValues(values));
+      toast({ title: "Success", description: "Task created." });
+      refreshCurrentView();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create task";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+      throw err;
+    }
+  };
+
+  const handleEdit = async (values: TaskFormValues) => {
+    if (!selectedTask) return;
+    try {
+      await updateTask(selectedTask.id, mapFormValues(values));
+      toast({ title: "Success", description: "Task updated." });
+      refreshCurrentView();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update task";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+      throw err;
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedTask) return;
+    setDeleteLoading(true);
+    try {
+      await deleteTask(selectedTask.id);
+      toast({ title: "Success", description: "Task deleted." });
+      setDeleteOpen(false);
+      setSelectedTask(null);
+      refreshCurrentView();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete task";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Board view: status change (drag & drop)
+  const handleStatusChange = useCallback(
+    async (taskId: string, newStatus: Task["status"]) => {
+      try {
+        await updateTask(taskId, { status: newStatus });
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: "Failed to update task status.",
+          variant: "destructive",
+        });
+        throw err;
+      }
+    },
+    [updateTask]
+  );
+
+  // --- Modal openers ---
+
+  const openCreateForm = () => {
+    setSelectedTask(null);
+    setFormMode("create");
+    setFormOpen(true);
+  };
+
+  const openEditForm = (task: TaskRow) => {
+    setSelectedTask(task);
+    setFormMode("edit");
+    setFormOpen(true);
+  };
+
+  const openDetail = (task: TaskRow) => {
+    setSelectedTask(task);
+    setDetailOpen(true);
+  };
+
+  const openDeleteConfirm = (task: TaskRow) => {
+    setSelectedTask(task);
+    setDeleteOpen(true);
+  };
+
+  // --- Helpers for list view ---
+
+  const handleSearchChange = (value: string) => setSearch(value);
+
+  // --- Error state ---
+
+  if (error && tasks.length === 0 && view === "list") {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Tasks" description="Manage your tasks.">
+          <Button onClick={openCreateForm}>
+            <Plus className="mr-2 h-4 w-4" /> New Task
+          </Button>
+        </PageHeader>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error loading tasks</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button variant="outline" onClick={() => refreshCurrentView()}>
+          <Loader2 className="mr-2 h-4 w-4" /> Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // --- Main render ---
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Tasks"
-        description="Stay on top of your to-do list."
-      >
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Task
-        </Button>
+      <PageHeader title="Tasks" description="Manage your tasks.">
+        <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(v) => v && setView(v as ViewMode)}
+            className="border rounded-lg"
+          >
+            <ToggleGroupItem value="list" aria-label="List view" className="h-9 px-3 text-xs gap-1.5">
+              <List className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">List</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="board" aria-label="Board view" className="h-9 px-3 text-xs gap-1.5">
+              <Columns2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Board</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="calendar" aria-label="Calendar view" className="h-9 px-3 text-xs gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Calendar</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+          <Button onClick={openCreateForm}>
+            <Plus className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">New Task</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        </div>
       </PageHeader>
 
-      <div className="rounded-lg border">
-        <div className="grid grid-cols-12 gap-4 border-b bg-muted/50 px-4 py-3 text-xs font-medium uppercase text-muted-foreground">
-          <div className="col-span-6">Task</div>
-          <div className="col-span-2">Priority</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-2">Due</div>
-        </div>
-        {sampleTasks.map((task) => (
-          <div
-            key={task.id}
-            className="grid grid-cols-12 gap-4 border-b px-4 py-3 text-sm last:border-0 hover:bg-accent/50 transition-colors"
-          >
-            <div className="col-span-6 flex items-center gap-3">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                defaultChecked={task.status === "Completed"}
-              />
-              <span className={task.status === "Completed" ? "line-through text-muted-foreground" : ""}>
-                {task.title}
-              </span>
-            </div>
-            <div className="col-span-2">
-              <Badge
-                variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "default" : "secondary"}
-                className="text-[10px] uppercase"
-              >
-                {task.priority}
-              </Badge>
-            </div>
-            <div className="col-span-2 text-muted-foreground">{task.status}</div>
-            <div className="col-span-2 text-muted-foreground">{task.due}</div>
-          </div>
-        ))}
-      </div>
+      {/* Error banner */}
+      {error && tasks.length > 0 && (
+        <Alert variant="destructive" className="py-3">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle className="text-sm">Error</AlertTitle>
+          <AlertDescription className="text-sm">{error}</AlertDescription>
+        </Alert>
+      )}
 
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted mb-3">
-            <CheckSquare className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground">Showing 5 sample tasks</p>
-        </CardContent>
-      </Card>
+      {/* Views */}
+      {view === "list" && (
+        <TaskListView
+          tasks={tasks}
+          pagination={pagination}
+          loading={loading}
+          search={search}
+          onSearchChange={handleSearchChange}
+          statusFilter={statusFilter}
+          onStatusFilterChange={(v) => { setStatusFilter(v); setListPage(1); }}
+          priorityFilter={priorityFilter}
+          onPriorityFilterChange={(v) => { setPriorityFilter(v); setListPage(1); }}
+          sortBy={sortBy}
+          onSortByChange={(v) => { setSortBy(v); setListPage(1); }}
+          sortOrder={sortOrder}
+          onToggleSortOrder={() => setSortOrder((o) => (o === "asc" ? "desc" : "asc"))}
+          page={listPage}
+          pageSize={pageSize}
+          onPageChange={setListPage}
+          onPageSizeChange={(s) => { setPageSize(s); setListPage(1); }}
+          onTaskClick={openDetail}
+          onEditClick={openEditForm}
+          onDeleteClick={openDeleteConfirm}
+        />
+      )}
+
+      {view === "board" && (
+        <TaskBoardView
+          tasks={tasks}
+          loading={loading}
+          onStatusChange={handleStatusChange}
+          onTaskClick={openDetail}
+        />
+      )}
+
+      {view === "calendar" && (
+        <TaskCalendarView
+          tasks={tasks}
+          loading={loading}
+          onTaskClick={openDetail}
+          onEditClick={openEditForm}
+          onDeleteClick={openDeleteConfirm}
+        />
+      )}
+
+      {/* Modals */}
+      <TaskForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        onSubmit={formMode === "create" ? handleCreate : handleEdit}
+        mode={formMode}
+        profiles={profiles}
+        defaultValues={
+          selectedTask && formMode === "edit"
+            ? {
+                title: selectedTask.title,
+                description: selectedTask.description || "",
+                status: selectedTask.status,
+                priority: selectedTask.priority,
+                due_date: selectedTask.due_date || "",
+                assigned_to: selectedTask.assigned_to || "",
+              }
+            : undefined
+        }
+      />
+
+      <TaskDetail
+        task={selectedTask}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={(t) => {
+          setDetailOpen(false);
+          setTimeout(() => openEditForm(t), 200);
+        }}
+        onDelete={(t) => {
+          setDetailOpen(false);
+          setTimeout(() => openDeleteConfirm(t), 200);
+        }}
+      />
+
+      <TaskDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleDelete}
+        taskTitle={selectedTask?.title || ""}
+        loading={deleteLoading}
+      />
     </div>
   );
 }
