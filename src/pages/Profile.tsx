@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
+import { ProfileImageCropper } from "@/components/profile/ProfileImageCropper";
 import {
   Loader2,
   User,
@@ -38,6 +39,9 @@ export default function Profile() {
   const [phone, setPhone] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropImageUrl, setCropImageUrl] = useState<string | null>(null);
+  const pendingFileRef = useRef<File | null>(null);
 
   useEffect(() => {
     if (user) fetchProfile(user.id);
@@ -78,9 +82,27 @@ export default function Profile() {
       return;
     }
 
+    // Create a local URL and open the cropper
+    const objectUrl = URL.createObjectURL(file);
+    pendingFileRef.current = file;
+    setCropImageUrl(objectUrl);
+    setCropperOpen(true);
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!user) return;
+
     setAvatarUploading(true);
+    setCropperOpen(false);
     try {
-      await uploadAvatar(user.id, file);
+      // Create a File from the cropped Blob
+      const originalFile = pendingFileRef.current;
+      const fileName = originalFile?.name || "avatar.jpg";
+      const croppedFile = new File([croppedBlob], fileName, { type: "image/jpeg" });
+
+      await uploadAvatar(user.id, croppedFile);
       toast({ title: "Success", description: "Avatar updated." });
       await fetchProfile(user.id);
     } catch (err) {
@@ -88,8 +110,17 @@ export default function Profile() {
       toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setAvatarUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      pendingFileRef.current = null;
     }
+  };
+
+  const handleCropCancel = () => {
+    setCropperOpen(false);
+    if (cropImageUrl) {
+      URL.revokeObjectURL(cropImageUrl);
+      setCropImageUrl(null);
+    }
+    pendingFileRef.current = null;
   };
 
   const getInitials = () => {
@@ -164,6 +195,15 @@ export default function Profile() {
             </p>
           </CardContent>
         </Card>
+
+        {cropImageUrl && (
+          <ProfileImageCropper
+            open={cropperOpen}
+            imageUrl={cropImageUrl}
+            onCancel={handleCropCancel}
+            onCropComplete={handleCropComplete}
+          />
+        )}
 
         {/* Info */}
         <Card className="lg:col-span-2">
