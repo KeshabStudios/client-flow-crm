@@ -23,19 +23,21 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const navItems = [
-  { title: "Dashboard", href: "/", icon: LayoutDashboard },
-  { title: "Customers", href: "/customers", icon: Users },
-  { title: "Leads", href: "/leads", icon: TrendingUp },
-  { title: "Board", href: "/kanban", icon: Columns3 },
-  { title: "Tasks", href: "/tasks", icon: CheckSquare },
-  { title: "Profile", href: "/profile", icon: User },
-  { title: "Settings", href: "/settings", icon: Settings },
+  { key: "nav.dashboard", href: "/", icon: LayoutDashboard },
+  { key: "nav.customers", href: "/customers", icon: Users },
+  { key: "nav.leads", href: "/leads", icon: TrendingUp },
+  { key: "nav.board", href: "/kanban", icon: Columns3 },
+  { key: "nav.tasks", href: "/tasks", icon: CheckSquare },
+  { key: "nav.profile", href: "/profile", icon: User },
+  { key: "nav.settings", href: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
   const { state, toggleSidebar, setOpenMobile, isMobile } = useSidebar();
+  const { t } = useLanguage();
   const collapsed = state === "collapsed";
 
   return (
@@ -62,7 +64,7 @@ export function AppSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton asChild tooltip={item.title}>
+              <SidebarMenuButton asChild tooltip={t(item.key)}>
                 <NavLink
                   to={item.href}
                   onClick={() => {
@@ -78,7 +80,7 @@ export function AppSidebar() {
                   }
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
-                  <span>{item.title}</span>
+                  <span>{t(item.key)}</span>
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>

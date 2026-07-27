@@ -21,6 +21,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/lib/supabase";
 
 interface SearchResult {
@@ -43,6 +44,7 @@ const pageItems: SearchResult[] = [
 
 export function SearchCommand() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -137,7 +139,7 @@ export function SearchCommand() {
         onClick={() => setOpen(true)}
       >
         <Search className="mr-2 h-4 w-4" />
-        <span>Search anything...</span>
+        <span>{t("nav.search")}</span>
         <kbd className="pointer-events-none absolute right-2 hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 md:flex">
           <span className="text-xs">⌘</span>K
         </kbd>

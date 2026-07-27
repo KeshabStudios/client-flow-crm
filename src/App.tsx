@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -31,6 +32,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ThemeProvider>
+            <LanguageProvider>
             <ErrorBoundary>
               <Routes>
                 {/* Public auth routes */}
@@ -56,6 +58,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ErrorBoundary>
+            </LanguageProvider>
           </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>

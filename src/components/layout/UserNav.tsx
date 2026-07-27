@@ -23,11 +23,13 @@ import {
 } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/lib/supabase";
 
 export function UserNav() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export function UserNav() {
         <Button
           variant="ghost"
           className="relative h-9 gap-2 rounded-full px-2 data-[state=open]:bg-accent"
-          aria-label="User menu"
+          aria-label={t("nav.userMenu")}
         >
           <Avatar className="h-7 w-7">
             <AvatarImage
@@ -124,7 +126,7 @@ export function UserNav() {
           onClick={() => navigate("/logout")}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{t("nav.logout")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

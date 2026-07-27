@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useSettings } from "@/hooks/useSettings";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SeoHead } from "@/components/shared/SeoHead";
@@ -41,15 +42,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
 
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
-  { code: "pt", label: "Português" },
-  { code: "ja", label: "日本語" },
-  { code: "zh", label: "中文" },
-];
+import { LANGUAGES } from "@/lib/translations";
 
 function SettingsSkeleton() {
   return (
@@ -76,6 +69,7 @@ function SettingsSkeleton() {
 export default function Settings() {
   const { user } = useAuth();
   const { theme, toggleTheme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const { settings, loading, error, fetchSettings, updateSettings } = useSettings();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -86,7 +80,6 @@ export default function Settings() {
   const [changingPw, setChangingPw] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
 
-  const [language, setLanguage] = useState("en");
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -97,14 +90,14 @@ export default function Settings() {
 
   useEffect(() => {
     if (settings) {
-      setLanguage(settings.language || "en");
+      if (settings.language) setLanguage(settings.language as any);
       setEmailNotifs(settings.email_notifications ?? true);
       setPushNotifs(settings.push_notifications ?? true);
       if (settings.theme === "dark" || settings.theme === "light") {
         setTheme(settings.theme);
       }
     }
-  }, [settings, setTheme]);
+  }, [settings, setTheme, setLanguage]);
 
   const handleSaveSettings = async () => {
     if (!user) return;
@@ -153,9 +146,9 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <SeoHead title="Settings" description="Manage your preferences and account security." />
+      <SeoHead title={t("page.settings.title")} description={t("page.settings.desc")} />
 
-      <PageHeader title="Settings" description="Manage your preferences and account security." />
+      <PageHeader title={t("page.settings.title")} description={t("page.settings.desc")} />
 
       {error && <ErrorState message={error} />}
 
@@ -170,15 +163,15 @@ export default function Settings() {
                 <Sun className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               )}
               <div>
-                <CardTitle>Appearance</CardTitle>
-                <CardDescription>Choose between light and dark mode.</CardDescription>
+                <CardTitle>{t("settings.appearance")}</CardTitle>
+                <CardDescription>{t("settings.appearanceDesc")}</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
-                <Label htmlFor="dark-mode" className="text-sm font-medium">Dark Mode</Label>
+                <Label htmlFor="dark-mode" className="text-sm font-medium">{t("settings.darkMode")}</Label>
                 <p className="text-xs text-muted-foreground">
                   {theme === "dark" ? "Dark theme is active" : "Light theme is active"}
                 </p>
@@ -203,19 +196,19 @@ export default function Settings() {
             <div className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               <div>
-                <CardTitle>Language</CardTitle>
-                <CardDescription>Select your preferred language.</CardDescription>
+                <CardTitle>{t("settings.language")}</CardTitle>
+                <CardDescription>{t("settings.languageDesc")}</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="w-full sm:w-[250px]" aria-label="Select language">
-                <SelectValue placeholder="Select language" />
+              <SelectTrigger className="w-full sm:w-[250px]" aria-label={t("settings.language")}>
+                <SelectValue placeholder={t("settings.language")} />
               </SelectTrigger>
               <SelectContent>
                 {LANGUAGES.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>{lang.label}</SelectItem>
+                  <SelectItem key={lang.code} value={lang.code}>{lang.nativeLabel}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -228,8 +221,8 @@ export default function Settings() {
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               <div>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>Control which notifications you receive.</CardDescription>
+                <CardTitle>{t("settings.notifications")}</CardTitle>
+                <CardDescription>{t("settings.notificationsDesc")}</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -238,8 +231,8 @@ export default function Settings() {
               <div className="flex items-start gap-3">
                 <Bell className="h-5 w-5 text-muted-foreground mt-0.5" aria-hidden="true" />
                 <div>
-                  <Label htmlFor="email-notifs" className="text-sm font-medium">Email Notifications</Label>
-                  <p className="text-xs text-muted-foreground">Receive updates via email.</p>
+                  <Label htmlFor="email-notifs" className="text-sm font-medium">{t("settings.emailNotifs")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("settings.emailNotifsDesc")}</p>
                 </div>
               </div>
               <Switch id="email-notifs" checked={emailNotifs} onCheckedChange={setEmailNotifs} aria-label="Toggle email notifications" />
@@ -249,8 +242,8 @@ export default function Settings() {
               <div className="flex items-start gap-3">
                 <BellRing className="h-5 w-5 text-muted-foreground mt-0.5" aria-hidden="true" />
                 <div>
-                  <Label htmlFor="push-notifs" className="text-sm font-medium">Push Notifications</Label>
-                  <p className="text-xs text-muted-foreground">Receive in-app notifications.</p>
+                  <Label htmlFor="push-notifs" className="text-sm font-medium">{t("settings.pushNotifs")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("settings.pushNotifsDesc")}</p>
                 </div>
               </div>
               <Switch id="push-notifs" checked={pushNotifs} onCheckedChange={setPushNotifs} aria-label="Toggle push notifications" />
@@ -261,7 +254,7 @@ export default function Settings() {
                 {savingSettings ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</>
                 ) : (
-                  <><Check className="mr-2 h-4 w-4" />Save Preferences</>
+                  <><Check className="mr-2 h-4 w-4" />{t("settings.savePrefs")}</>
                 )}
               </Button>
             </div>
@@ -274,8 +267,8 @@ export default function Settings() {
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               <div>
-                <CardTitle>Change Password</CardTitle>
-                <CardDescription>Update your account password.</CardDescription>
+                <CardTitle>{t("settings.changePassword")}</CardTitle>
+                <CardDescription>{t("settings.changePasswordDesc")}</CardDescription>
               </div>
             </div>
           </CardHeader>
