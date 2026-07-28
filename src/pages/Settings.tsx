@@ -30,6 +30,7 @@ import {
   Sun,
   Moon,
   Globe,
+  DollarSign,
   Bell,
   BellRing,
   Shield,
@@ -43,6 +44,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
 
 import { LANGUAGES } from "@/lib/translations";
+import { COUNTRIES, getCurrencySymbol } from "@/lib/currencies";
 
 function SettingsSkeleton() {
   return (
@@ -80,6 +82,7 @@ export default function Settings() {
   const [changingPw, setChangingPw] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
 
+  const [currency, setCurrency] = useState("USD");
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -92,6 +95,7 @@ export default function Settings() {
 
   useEffect(() => {
     if (settings) {
+      setCurrency(settings.currency || "USD");
       setEmailNotifs(settings.email_notifications ?? true);
       setPushNotifs(settings.push_notifications ?? true);
       // Mark initialized after first settings load so auto-save doesn't fire on mount
@@ -103,7 +107,7 @@ export default function Settings() {
     if (!user) return;
     setSavingSettings(true);
     try {
-      await updateSettings(user.id, { theme, language, email_notifications: emailNotifs, push_notifications: pushNotifs });
+      await updateSettings(user.id, { theme, language, currency, email_notifications: emailNotifs, push_notifications: pushNotifs });
       if (showToast) toast({ title: "Success", description: "Preferences saved." });
     } catch (err) {
       if (showToast) {
@@ -113,9 +117,9 @@ export default function Settings() {
     } finally {
       setSavingSettings(false);
     }
-  }, [user, theme, language, emailNotifs, pushNotifs, updateSettings]);
+  }, [user, theme, language, currency, emailNotifs, pushNotifs, updateSettings]);
 
-  // Auto-save when language, theme, emailNotifs, or pushNotifs changes
+  // Auto-save when language, theme, currency, emailNotifs, or pushNotifs changes
   useEffect(() => {
     if (!user || !initialized.current) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -125,7 +129,7 @@ export default function Settings() {
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
-  }, [language, theme, emailNotifs, pushNotifs, user, saveToDb]);
+  }, [language, theme, currency, emailNotifs, pushNotifs, user, saveToDb]);
 
   const handleSaveSettings = async () => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -231,6 +235,48 @@ export default function Settings() {
                 ))}
               </SelectContent>
             </Select>
+          </CardContent>
+        </Card>
+
+        {/* Currency / Country */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+              <div>
+                <CardTitle>Country / Currency</CardTitle>
+                <CardDescription>Select your country to set the preferred currency symbol.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger className="w-full sm:w-[250px]" aria-label="Select country">
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      <span className="flex items-center gap-2">
+                        <span>{c.symbol}</span>
+                        <span>{c.country}</span>
+                        <span className="text-muted-foreground">({c.currency})</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {currency && (
+                <div className="flex items-center gap-2 rounded-lg border px-4 py-3 text-sm">
+                  <span className="text-muted-foreground">Selected currency:</span>
+                  <span className="font-semibold text-lg">{getCurrencySymbol(currency)}</span>
+                  <span className="text-muted-foreground">
+                    {COUNTRIES.find((c) => c.code === currency)?.currency}
+                  </span>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

@@ -62,6 +62,7 @@ export interface UserSettings {
   user_id: string;
   theme: "light" | "dark";
   language: string;
+  currency: string;
   email_notifications: boolean;
   push_notifications: boolean;
 }
