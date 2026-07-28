@@ -1,0 +1,36 @@
+name: Keep Supabase Active
+
+on:
+  schedule:
+    # Runs every 3 hours - Supabase free tier pauses after 7 days of inactivity
+    - cron: '0 */3 * * *'
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    name: Ping Supabase Project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase project URL
+        run: |
+          echo "⏰ Pinging Supabase project at $(date -u)"
+          
+          # Ping the main project URL
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://iqedxusjtawqvisbypnf.supabase.co" \
+            --connect-timeout 30 --max-time 60)
+          echo "Project URL response: $HTTP_CODE"
+          
+          # Ping the REST API endpoint to simulate real activity
+          REST_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://iqedxusjtawqvisbypnf.supabase.co/rest/v1/" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            --connect-timeout 30 --max-time 60)
+          echo "REST API response: $REST_CODE"
+          
+          echo "✅ Ping completed successfully"
+
+      - name: Send notification on failure
+        if: failure()
+        run: echo "❌ Failed to ping Supabase project - check the workflow logs"
