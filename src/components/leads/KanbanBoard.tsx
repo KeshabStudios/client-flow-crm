@@ -153,7 +153,7 @@ export function KanbanBoard({
         {STAGES.map((stage) => (
           <div
             key={stage.key}
-            className="flex h-full w-[280px] shrink-0 flex-col rounded-xl bg-muted/30 animate-pulse"
+            className="flex h-full w-[300px] shrink-0 flex-col rounded-xl bg-muted/30 animate-pulse"
           >
             <div className="flex items-center gap-2 px-3 pt-3 pb-2">
               <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground/20" />
@@ -192,7 +192,7 @@ export function KanbanBoard({
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
+        <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-thin">
           {STAGES.map((stage) => (
             <KanbanColumn
               key={stage.key}

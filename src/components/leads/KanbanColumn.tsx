@@ -46,18 +46,18 @@ export function KanbanColumn({
   return (
     <div
       className={cn(
-        "flex h-full w-[280px] shrink-0 flex-col rounded-xl transition-colors duration-200",
+        "flex h-full w-[300px] shrink-0 flex-col rounded-xl transition-colors duration-200",
         bgColor,
         isOver && "ring-2 ring-primary/40 bg-primary/5"
       )}
     >
       {/* Column Header */}
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-        <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", dotColor)} />
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-border/40">
+        <div className={cn("h-3 w-3 rounded-full shrink-0 ring-2 ring-white/50 dark:ring-black/20", dotColor)} />
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
           {title}
         </h3>
-        <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-muted-foreground/20 px-1.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+        <span className="ml-auto flex h-5 min-w-[22px] items-center justify-center rounded-full bg-foreground/10 px-1.5 text-[11px] font-semibold text-foreground/60 tabular-nums">
           {leads.length}
         </span>
       </div>
@@ -66,7 +66,7 @@ export function KanbanColumn({
       <div
         ref={setNodeRef}
         className={cn(
-          "flex flex-col gap-2 overflow-y-auto p-3 pt-1 transition-all duration-200",
+          "flex flex-col gap-2 overflow-y-auto p-3 transition-all duration-200",
           "min-h-[120px]",
           leads.length === 0 && "flex-1"
         )}
@@ -83,13 +83,13 @@ export function KanbanColumn({
         {leads.length === 0 && (
           <div
             className={cn(
-              "flex flex-1 items-center justify-center rounded-lg border-2 border-dashed",
+              "flex flex-1 items-center justify-center rounded-lg border-2 border-dashed py-10",
               "border-muted-foreground/20 text-muted-foreground/40",
-              "text-xs font-medium py-8",
+              "text-xs font-medium transition-colors",
               isOver && "border-primary/40 bg-primary/5 text-primary/40"
             )}
           >
-            {isOver ? "Drop here" : "No leads"}
+            {isOver ? "Drop here" : "Drop leads here"}
           </div>
         )}
       </div>
