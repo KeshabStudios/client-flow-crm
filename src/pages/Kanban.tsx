@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SeoHead } from "@/components/shared/SeoHead";
@@ -11,98 +10,70 @@ import {
 } from "@/components/leads/KanbanBoard";
 import { LeadDetail } from "@/components/leads/LeadDetail";
 import { LeadDeleteDialog } from "@/components/leads/LeadDeleteDialog";
+import { useLeads, LeadWithCustomer } from "@/hooks/useLeads";
 import type { KanbanCardData } from "@/components/leads/KanbanCard";
-import type { LeadStage, Lead } from "@/types";
+import type { LeadStage } from "@/types";
 import { Table2, Columns3 } from "lucide-react";
 
-interface CustomerInfo {
-  full_name: string;
-  company_name?: string | null;
-}
-
-interface LeadRow {
-  id: string;
-  title: string;
-  stage: LeadStage;
-  value: number | null;
-  expected_close_date: string | null;
-  customer_id: string | null;
-  customers: CustomerInfo | null;
-  created_at: string;
+function mapToKanbanCardData(lead: LeadWithCustomer): KanbanCardData {
+  return {
+    id: lead.id,
+    title: lead.title,
+    stage: lead.stage,
+    value: lead.value ?? null,
+    expected_close_date: lead.expected_close_date ?? null,
+    customer: lead.customers
+      ? {
+          full_name: lead.customers.full_name,
+          company_name: lead.customers.company_name ?? null,
+        }
+      : null,
+  };
 }
 
 export default function Kanban() {
   const navigate = useNavigate();
 
-  const [leads, setLeads] = useState<KanbanCardData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    leads,
+    loading,
+    error,
+    fetchAllLeads,
+    updateLead,
+    deleteLead,
+  } = useLeads();
 
+  const [kanbanData, setKanbanData] = useState<KanbanCardData[]>([]);
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<KanbanCardData | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const fetchLeads = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error: fetchError } = await supabase
-        .from("leads")
-        .select("*, customers(full_name, company_name)")
-        .order("created_at", { ascending: false });
-
-      if (fetchError) throw fetchError;
-
-      const rows = (data || []) as unknown as LeadRow[];
-      const mapped: KanbanCardData[] = rows.map((row) => ({
-        id: row.id,
-        title: row.title,
-        stage: row.stage,
-        value: row.value,
-        expected_close_date: row.expected_close_date,
-        customer: row.customers
-          ? {
-              full_name: row.customers.full_name,
-              company_name: row.customers.company_name,
-            }
-          : null,
-      }));
-
-      setLeads(mapped);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to load leads";
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchLeads();
-  }, [fetchLeads]);
+    fetchAllLeads();
+  }, [fetchAllLeads]);
+
+  // Sync kanbanData from leads whenever leads changes
+  useEffect(() => {
+    setKanbanData(leads.map(mapToKanbanCardData));
+  }, [leads]);
 
   const handleStageChange = useCallback(
     async (leadId: string, newStage: LeadStage) => {
-      const { error: updateError } = await supabase
-        .from("leads")
-        .update({ stage: newStage })
-        .eq("id", leadId);
-
-      if (updateError) {
+      try {
+        await updateLead(leadId, { stage: newStage });
+        setKanbanData((prev) =>
+          prev.map((l) => (l.id === leadId ? { ...l, stage: newStage } : l))
+        );
+      } catch {
         toast({
           title: "Error",
           description: "Failed to update lead stage.",
           variant: "destructive",
         });
-        throw updateError;
       }
-
-      setLeads((prev) =>
-        prev.map((l) => (l.id === leadId ? { ...l, stage: newStage } : l))
-      );
     },
-    []
+    [updateLead]
   );
 
   const handleCardClick = useCallback((lead: KanbanCardData) => {
@@ -111,7 +82,7 @@ export default function Kanban() {
   }, []);
 
   const handleEditFromDetail = useCallback(
-    (lead: KanbanCardData) => {
+    () => {
       setDetailOpen(false);
       navigate("/leads");
       toast({
@@ -135,27 +106,20 @@ export default function Kanban() {
     if (!selectedLead) return;
     setDeleteLoading(true);
     try {
-      const { error: deleteError } = await supabase
-        .from("leads")
-        .delete()
-        .eq("id", selectedLead.id);
-
-      if (deleteError) throw deleteError;
-
+      await deleteLead(selectedLead.id);
       toast({ title: "Success", description: "Lead deleted." });
       setDeleteOpen(false);
       setSelectedLead(null);
-      setLeads((prev) => prev.filter((l) => l.id !== selectedLead.id));
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to delete lead";
-      toast({ title: "Error", description: msg, variant: "destructive" });
+      setKanbanData((prev) => prev.filter((l) => l.id !== selectedLead.id));
+    } catch {
+      toast({ title: "Error", description: "Failed to delete lead.", variant: "destructive" });
     } finally {
       setDeleteLoading(false);
     }
-  }, [selectedLead]);
+  }, [selectedLead, deleteLead]);
 
   // Error state
-  if (error && !loading) {
+  if (error && !loading && kanbanData.length === 0) {
     return (
       <div className="space-y-6">
         <SeoHead title="Kanban Board" />
@@ -168,7 +132,7 @@ export default function Kanban() {
             Table View
           </Button>
         </PageHeader>
-        <ErrorState message={error} onRetry={fetchLeads} />
+        <ErrorState message={error} onRetry={fetchAllLeads} />
       </div>
     );
   }
@@ -194,7 +158,7 @@ export default function Kanban() {
       </PageHeader>
 
       <KanbanBoard
-        leads={leads}
+        leads={kanbanData}
         loading={loading}
         onStageChange={handleStageChange}
         onCardClick={handleCardClick}

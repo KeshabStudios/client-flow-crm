@@ -16,7 +16,7 @@ import {
   Legend,
 } from "recharts";
 import { Loader2, BarChart3 } from "lucide-react";
-import type { MonthlyLeadItem } from "@/data/dashboard";
+import type { MonthlyLeadItem } from "@/types";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -46,7 +46,7 @@ interface MonthlyLeadsChartProps {
 
 export function MonthlyLeadsChart({ data, loading }: MonthlyLeadsChartProps) {
   const totalLeads = data.reduce((sum, m) => sum + m.leads, 0);
-  const totalQualified = data.reduce((sum, m) => sum + m.qualified, 0);
+  const totalQualified = data.reduce((sum, m) => sum + (m.qualified ?? 0), 0);
 
   return (
     <Card>

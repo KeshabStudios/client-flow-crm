@@ -85,7 +85,7 @@ const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 // --- Page Component ---
 
-export default function Deals() {
+export default function Leads() {
   const {
     leads,
     pagination,
@@ -136,16 +136,15 @@ export default function Deals() {
     pageSize,
   }), [debouncedSearch, stageFilter, sourceFilter, sortBy, sortOrder, page, pageSize]);
 
-  // Initial load
-  useEffect(() => {
-    fetchLeads(buildParams());
-    fetchStats();
-    fetchCustomersForSelector();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
+  // Fetch leads when params change; load stats & customers once on mount
   useEffect(() => {
     fetchLeads(buildParams());
   }, [fetchLeads, buildParams]);
+
+  useEffect(() => {
+    fetchStats();
+    fetchCustomersForSelector();
+  }, [fetchStats, fetchCustomersForSelector]);
 
   const refresh = useCallback(() => {
     fetchLeads(buildParams());

@@ -16,7 +16,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import Logout from "@/pages/Logout";
 import Dashboard from "@/pages/Index";
 import Customers from "@/pages/Customers";
-import Deals from "@/pages/Deals";
+import Leads from "@/pages/Leads";
 import Kanban from "@/pages/Kanban";
 import Tasks from "@/pages/Tasks";
 import Profile from "@/pages/Profile";
@@ -48,7 +48,7 @@ const App = () => (
                   <Route element={<AppLayout />}>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/customers" element={<Customers />} />
-                    <Route path="/leads" element={<Deals />} />
+                    <Route path="/leads" element={<Leads />} />
                     <Route path="/kanban" element={<Kanban />} />
                     <Route path="/tasks" element={<Tasks />} />
                     <Route path="/profile" element={<Profile />} />

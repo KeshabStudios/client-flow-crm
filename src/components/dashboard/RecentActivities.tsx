@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, Inbox } from "lucide-react";
-import type { Activity } from "@/data/dashboard";
+import type { Activity } from "@/types";
 
 interface RecentActivitiesProps {
   activities: Activity[];

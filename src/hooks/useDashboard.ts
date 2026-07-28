@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Activity, DashboardTask, LeadStatusItem, MonthlyLeadItem } from "@/data/dashboard";
+import type { Activity, DashboardTask, LeadStatusItem, MonthlyLeadItem } from "@/types";
 
 function getStartOfWeek(): Date {
   const now = new Date();
@@ -78,18 +78,21 @@ export function useDashboard() {
         supabase.from("customers").select("*", { count: "exact", head: true }).gte("created_at", startOfWeek),
         supabase.from("leads").select("*", { count: "exact", head: true }).gte("created_at", startOfWeek),
 
+        // WelcomeCard: team members count
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+
         // Recent activities
         supabase.from("leads").select("id, title, created_at").order("created_at", { ascending: false }).limit(3),
         supabase.from("tasks").select("id, title, created_at").order("created_at", { ascending: false }).limit(3),
         supabase.from("customers").select("id, full_name, created_at").order("created_at", { ascending: false }).limit(3),
 
-        // Upcoming tasks (category column doesn't exist in tasks table)
-          supabase
-            .from("tasks")
-            .select("id, title, priority, due_date")
-            .neq("status", "completed")
-            .order("due_date", { ascending: true })
-            .limit(5),
+        // Upcoming tasks
+        supabase
+          .from("tasks")
+          .select("id, title, priority, due_date")
+          .neq("status", "completed")
+          .order("due_date", { ascending: true })
+          .limit(5),
 
         // Lead status data
         supabase.from("leads").select("stage"),
@@ -110,18 +113,19 @@ export function useDashboard() {
       const tasksDueToday = results[4].status === "fulfilled" ? results[4].value.count ?? 0 : 0;
       const customersThisWeek = results[5].status === "fulfilled" ? results[5].value.count ?? 0 : 0;
       const leadsThisWeek = results[6].status === "fulfilled" ? results[6].value.count ?? 0 : 0;
+      const teamMembers = results[7].status === "fulfilled" ? results[7].value.count ?? 1 : 1;
 
       setWelcomeStats([
         { label: "Due today", value: tasksDueToday },
-        { label: "Team members", value: 1 }, // Simplified — counts the current user
+        { label: "Team members", value: teamMembers },
         { label: "New this week", value: customersThisWeek + leadsThisWeek },
       ]);
 
       // --- Recent activities ---
       const activities: Activity[] = [];
 
-      if (results[7].status === "fulfilled") {
-        const leads = results[7].value.data ?? [];
+      if (results[8].status === "fulfilled") {
+        const leads = results[8].value.data ?? [];
         leads.forEach((lead: { id: string; title: string; created_at: string }) => {
           activities.push({
             id: `lead-${lead.id}`,
@@ -133,8 +137,8 @@ export function useDashboard() {
         });
       }
 
-      if (results[8].status === "fulfilled") {
-        const tasks = results[8].value.data ?? [];
+      if (results[9].status === "fulfilled") {
+        const tasks = results[9].value.data ?? [];
         tasks.forEach((task: { id: string; title: string; created_at: string }) => {
           activities.push({
             id: `task-${task.id}`,
@@ -146,8 +150,8 @@ export function useDashboard() {
         });
       }
 
-      if (results[9].status === "fulfilled") {
-        const customers = results[9].value.data ?? [];
+      if (results[10].status === "fulfilled") {
+        const customers = results[10].value.data ?? [];
         customers.forEach((cust: { id: string; full_name: string; created_at: string }) => {
           activities.push({
             id: `cust-${cust.id}`,
@@ -159,16 +163,12 @@ export function useDashboard() {
         });
       }
 
-      activities.sort((a, b) => {
-        const timeA = parseFloat(a.time);
-        const timeB = parseFloat(b.time);
-        return timeA - timeB;
-      });
-      setRecentActivities(activities.slice(0, 6));
+      // Activities are already in time order (each query returns newest first)
+      setRecentActivities(activities);
 
       // --- Upcoming tasks ---
-      if (results[10].status === "fulfilled") {
-        const tasks = results[10].value.data ?? [];
+      if (results[11].status === "fulfilled") {
+        const tasks = results[11].value.data ?? [];
         setUpcomingTasks(
           tasks.map((t: { id: string; title: string; priority: string; due_date: string | null }) => ({
             id: t.id,
@@ -183,8 +183,8 @@ export function useDashboard() {
       }
 
       // --- Lead status chart ---
-      if (results[11].status === "fulfilled") {
-        const stageData = results[11].value.data ?? [];
+      if (results[12].status === "fulfilled") {
+        const stageData = results[12].value.data ?? [];
         const stageCounts: Record<string, number> = {};
         stageData.forEach((l: { stage: string }) => {
           stageCounts[l.stage] = (stageCounts[l.stage] || 0) + 1;
@@ -217,8 +217,8 @@ export function useDashboard() {
       }
 
       // --- Monthly leads chart ---
-      if (results[12].status === "fulfilled") {
-        const createdData = results[12].value.data ?? [];
+      if (results[13].status === "fulfilled") {
+        const createdData = results[13].value.data ?? [];
         const monthlyCounts: Record<string, { leads: number }> = {};
 
         // Initialize all 12 months
@@ -242,7 +242,6 @@ export function useDashboard() {
             return {
               month: months[monthIdx],
               leads: val.leads,
-              qualified: Math.round(val.leads * 0.6), // approximate qualified
             };
           })
         );

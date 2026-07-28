@@ -222,6 +222,32 @@ export function useLeads() {
     }
   }, []);
 
+  // --- Fetch all leads (unpaginated, for Kanban board) ---
+
+  const fetchAllLeads = useCallback(async (): Promise<LeadWithCustomer[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("leads")
+        .select("*, customers(full_name, company_name)")
+        .order("created_at", { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      const mapped = (data || []) as unknown as LeadWithCustomer[];
+      setLeads(mapped);
+      return mapped;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to fetch all leads";
+      setError(msg);
+      setLeads([]);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // --- CRUD operations ---
 
   const createLead = useCallback(
@@ -341,6 +367,7 @@ export function useLeads() {
     stats,
     customers,
     fetchLeads,
+    fetchAllLeads,
     fetchStats,
     fetchCustomersForSelector,
     createLead,

@@ -17,6 +17,7 @@ export interface Customer {
   status: "active" | "inactive" | "lead";
   notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export type LeadStage = "new" | "qualified" | "proposal" | "negotiation" | "won" | "lost";
@@ -31,6 +32,7 @@ export interface Lead {
   source?: LeadSource;
   expected_close_date?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Task {
@@ -44,14 +46,13 @@ export interface Task {
   status: "todo" | "in_progress" | "completed";
   due_date?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Profile {
   id: string;
   first_name?: string;
   last_name?: string;
-  full_name?: string;
-  name?: string;
   avatar_url?: string;
   phone?: string;
   updated_at: string;
@@ -76,4 +77,33 @@ export interface Notification {
   link?: string;
   read: boolean;
   created_at: string;
+}
+
+// Dashboard types
+export interface Activity {
+  id: string;
+  user: { name: string; initials: string };
+  action: string;
+  target: string;
+  time: string;
+}
+
+export interface DashboardTask {
+  id: string;
+  title: string;
+  priority: "high" | "medium" | "low";
+  due: string;
+  category: string;
+}
+
+export interface LeadStatusItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
+export interface MonthlyLeadItem {
+  month: string;
+  leads: number;
+  qualified?: number;
 }

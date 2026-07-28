@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from "recharts";
 import { Loader2, PieChart as PieIcon } from "lucide-react";
-import type { LeadStatusItem } from "@/data/dashboard";
+import type { LeadStatusItem } from "@/types";
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {

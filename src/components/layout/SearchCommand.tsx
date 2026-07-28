@@ -36,7 +36,7 @@ interface SearchResult {
 const pageItems: SearchResult[] = [
   { id: "dashboard", title: "Dashboard", type: "page", href: "/", icon: LayoutDashboard },
   { id: "customers", title: "Customers", type: "page", href: "/customers", icon: Users },
-  { id: "leads", title: "Deals", type: "page", href: "/leads", icon: TrendingUp },
+  { id: "leads", title: "Leads", type: "page", href: "/leads", icon: TrendingUp },
   { id: "kanban", title: "Kanban Board", type: "page", href: "/kanban", icon: Target },
   { id: "tasks", title: "Tasks", type: "page", href: "/tasks", icon: CheckSquare },
   { id: "settings", title: "Settings", type: "page", href: "/settings", icon: Settings },
@@ -145,7 +145,7 @@ export function SearchCommand() {
         </kbd>
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search pages, contacts, deals..." />
+        <CommandInput placeholder="Search pages, contacts, leads..." />
         <CommandList>
           {loading && results.length <= pageItems.length ? (
             <div className="flex items-center justify-center py-8">
@@ -190,7 +190,7 @@ export function SearchCommand() {
                 </CommandGroup>
               )}
               {results.filter((r) => r.type === "lead").length > 0 && (
-                <CommandGroup heading="Deals">
+                <CommandGroup heading="Leads">
                   {results
                     .filter((r) => r.type === "lead")
                     .map((item) => (

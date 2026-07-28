@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Loader2, ClipboardList } from "lucide-react";
-import type { DashboardTask } from "@/data/dashboard";
+import type { DashboardTask } from "@/types";
 
 const priorityStyles: Record<DashboardTask["priority"], string> = {
   high: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
