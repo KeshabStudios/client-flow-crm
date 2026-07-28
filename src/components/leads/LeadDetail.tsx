@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Target,
 } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import type { LeadWithCustomer } from "@/hooks/useLeads";
 
 interface LeadDetailProps {
@@ -60,6 +61,7 @@ export function LeadDetail({
   onEdit,
   onDelete,
 }: LeadDetailProps) {
+  const { symbol } = useCurrency();
   if (!lead) return null;
 
   return (
@@ -96,7 +98,7 @@ export function LeadDetail({
                 <div>
                   <p className="text-xs text-muted-foreground">Value</p>
                   <p className="text-sm font-medium">
-                    ${Number(lead.value).toLocaleString("en-US", {
+                    {symbol}{Number(lead.value).toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                     })}
                   </p>

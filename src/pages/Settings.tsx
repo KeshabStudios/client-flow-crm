@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useSettings } from "@/hooks/useSettings";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SeoHead } from "@/components/shared/SeoHead";
@@ -72,6 +73,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { theme, toggleTheme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const { setCurrency: setCtxCurrency } = useCurrency();
   const { settings, loading, error, fetchSettings, updateSettings } = useSettings();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -108,6 +110,7 @@ export default function Settings() {
     setSavingSettings(true);
     try {
       await updateSettings(user.id, { theme, language, currency, email_notifications: emailNotifs, push_notifications: pushNotifs });
+      setCtxCurrency(currency);
       if (showToast) toast({ title: "Success", description: "Preferences saved." });
     } catch (err) {
       if (showToast) {

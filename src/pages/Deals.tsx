@@ -39,6 +39,7 @@ import { LeadForm, LeadFormValues } from "@/components/leads/LeadForm";
 import { LeadDetail } from "@/components/leads/LeadDetail";
 import { LeadDeleteDialog } from "@/components/leads/LeadDeleteDialog";
 import { useLeads, FetchLeadsParams, LeadWithCustomer } from "@/hooks/useLeads";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import type { Lead } from "@/types";
 
 // --- Constants ---
@@ -253,11 +254,7 @@ export default function Deals() {
           </TableCell>
           <TableCell className="text-muted-foreground text-sm">
             {lead.value != null
-              ? new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                  notation: "compact",
-                }).format(lead.value)
+              ? formatValue(lead.value)
               : "—"}
           </TableCell>
           <TableCell>
@@ -285,9 +282,10 @@ export default function Deals() {
     });
   };
 
+  const { formatValue, symbol } = useCurrency();
+
   // --- Computed stat values ---
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact" }).format(val);
+  const formatCurrency = (val: number) => formatValue(val);
 
   return (
     <div className="space-y-6">

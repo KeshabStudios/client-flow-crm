@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { DollarSign, User, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Lead } from "@/types";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface CustomerInfo {
   full_name: string;
@@ -25,6 +26,7 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ lead, isDragOverlay, onClick }: KanbanCardProps) {
+  const { symbol } = useCurrency();
   const {
     attributes,
     listeners,
@@ -59,7 +61,7 @@ export function KanbanCard({ lead, isDragOverlay, onClick }: KanbanCardProps) {
         <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-1.5">
           <DollarSign className="h-3 w-3" />
           <span>
-            ${Number(lead.value).toLocaleString("en-US", {
+            {symbol}{Number(lead.value).toLocaleString("en-US", {
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
             })}
@@ -98,6 +100,7 @@ export function KanbanCard({ lead, isDragOverlay, onClick }: KanbanCardProps) {
 
 /** Non-draggable card used inside DragOverlay */
 export function KanbanDragOverlay({ lead }: { lead: KanbanCardData }) {
+  const { symbol } = useCurrency();
   return (
     <div
       className={cn(
@@ -111,7 +114,7 @@ export function KanbanDragOverlay({ lead }: { lead: KanbanCardData }) {
       {lead.value != null && lead.value > 0 && (
         <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-1.5">
           <DollarSign className="h-3 w-3" />
-          <span>${Number(lead.value).toLocaleString()}</span>
+          <span>{symbol}{Number(lead.value).toLocaleString()}</span>
         </div>
       )}
       {lead.customer && (
