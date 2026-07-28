@@ -232,6 +232,25 @@ Contributions are welcome! Feel free to open an issue or submit a pull request.
 
 ---
 
+## 🧪 Demo Account
+
+You can use the following demo account to explore the app with pre-loaded dummy data (Indian business scenarios):
+
+| Field | Value |
+|-------|-------|
+| **Email** | `demo@bizmanager.in` |
+| **Password** | `demo@1234` |
+| **Currency** | ₹ (INR) |
+| **Language** | বাংলা (Bengali) |
+
+### What's included in the demo:
+- 👥 **15 Customers** — Indian businesses (Sharma Enterprises, Patel Industries, Reddy Constructions, Mishra Jewellers, etc.)
+- 💼 **24 Leads** — Across all stages (new, qualified, proposal, closed_won)
+- 📋 **26 Tasks** — With priority levels and status tracking
+- 🔔 **Recent notifications** — In Bengali language
+
+---
+
 ## 📄 License
 
 This project is **MIT licensed**.
