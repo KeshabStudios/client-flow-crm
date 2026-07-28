@@ -69,9 +69,11 @@ export interface UserSettings {
 
 export interface Notification {
   id: string;
+  user_id: string;
   title: string;
   message: string;
   type: "info" | "success" | "warning" | "error";
+  link?: string;
   read: boolean;
   created_at: string;
 }

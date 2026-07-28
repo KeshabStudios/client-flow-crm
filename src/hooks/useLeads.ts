@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Lead, LeadStage, LeadSource } from "@/types";
 
 // --- Types ---
@@ -39,9 +40,32 @@ interface Customer {
   company_name?: string;
 }
 
+// --- Notification helper ---
+
+async function insertNotification(
+  userId: string,
+  title: string,
+  message: string,
+  type: "info" | "success" | "warning" | "error",
+  link?: string
+) {
+  try {
+    await supabase.from("notifications").insert({
+      user_id: userId,
+      title,
+      message,
+      type,
+      link,
+    });
+  } catch {
+    // Non-critical
+  }
+}
+
 // --- Hook ---
 
 export function useLeads() {
+  const { user } = useAuth();
   const [leads, setLeads] = useState<LeadWithCustomer[]>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     page: 1,
@@ -218,13 +242,31 @@ export function useLeads() {
         .single();
 
       if (error) throw error;
+
+      if (user) {
+        insertNotification(
+          user.id,
+          "New deal created",
+          `"${data.title}" has been added as a new deal.`,
+          "info",
+          "/leads"
+        );
+      }
+
       return newLead;
     },
-    []
+    [user]
   );
 
   const updateLead = useCallback(
     async (id: string, data: Partial<Lead>): Promise<Lead> => {
+      // Fetch old lead to detect stage changes
+      const { data: oldLead } = await supabase
+        .from("leads")
+        .select("stage, title")
+        .eq("id", id)
+        .single();
+
       const { data: updatedLead, error } = await supabase
         .from("leads")
         .update({
@@ -240,9 +282,50 @@ export function useLeads() {
         .single();
 
       if (error) throw error;
+
+      if (user && oldLead && data.stage && data.stage !== oldLead.stage) {
+        const stageLabels: Record<string, string> = {
+          new: "New",
+          qualified: "Qualified",
+          proposal: "Proposal",
+          negotiation: "Negotiation",
+          won: "Won 🎉",
+          lost: "Lost",
+        };
+
+        const newStageLabel = stageLabels[data.stage] || data.stage;
+        const title = oldLead.title || updatedLead.title;
+
+        if (data.stage === "won") {
+          insertNotification(
+            user.id,
+            "Deal won! 🎉",
+            `"${title}" has been marked as won.`,
+            "success",
+            "/leads"
+          );
+        } else if (data.stage === "lost") {
+          insertNotification(
+            user.id,
+            "Deal lost",
+            `"${title}" has been marked as lost.`,
+            "error",
+            "/leads"
+          );
+        } else {
+          insertNotification(
+            user.id,
+            "Deal stage changed",
+            `"${title}" moved to ${newStageLabel}.`,
+            "info",
+            "/leads"
+          );
+        }
+      }
+
       return updatedLead;
     },
-    []
+    [user]
   );
 
   const deleteLead = useCallback(async (id: string): Promise<void> => {
